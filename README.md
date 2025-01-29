@@ -18,4 +18,4 @@ REST API for  download, save and contlor files. Example: storage docks, images a
   - File versioning support
 
 
-![alt text](how-to-draw-a-cup-of-coffee-for-kids.jpg)
+![alt text](static/cofe.jpg)
