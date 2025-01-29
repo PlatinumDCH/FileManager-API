@@ -4,10 +4,10 @@
 REST API for  download, save and contlor files. Example: storage docks, images and video.
 
 ## 🛠Stack:
-✅ Backend: FastAPI, SQLAlchemy, Alembic, PostgreSQL, Redis
-✅ Storage: MinIO (S3-storage)
-✅ DevOps: Docker, Docker Compose, Nginx
-✅ Extra: OAuth2, Celery
+- ✅ Backend: FastAPI, SQLAlchemy, Alembic, PostgreSQL, Redis
+- ✅ Storage: MinIO (S3-storage)
+- ✅ DevOps: Docker, Docker Compose, Nginx
+- ✅ Extra: OAuth2, Celery
 
 ## Functional:
   - Autorizstion for JWT
