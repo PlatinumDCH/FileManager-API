@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "filemanager-api"
+version = "0.0.1"
+description = "async, api, file_manager"
+authors = ["DimaCheban <dimacheban23@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = {extras = ["standard"], version = "^0.115.7"}
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
