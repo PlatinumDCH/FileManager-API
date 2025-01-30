@@ -3,11 +3,11 @@ from fastapi import APIRouter, status, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user_model import User
-from app.utils.security import auth_serv
-from app.utils.jwt_process import jwt_serv
+from app.services.security import auth_serv
+from app.services.jwt_process import jwt_serv
 from app.config.client_db import get_conn_db
 from app.repository import user as repo_user
-from app.utils.pass_serv import Hasher
+from app.services.pass_serv import Hasher
 from app.config.client_db import get_conn_db
 from app.schemes.user import ShowUser, UserCreate
 from app.schemes.token import Token

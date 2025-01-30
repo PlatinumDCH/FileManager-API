@@ -5,7 +5,7 @@ from jose import JWTError, jwt
 import pytz
 from abc import ABC, abstractmethod
 
-from app.utils.jwt_process import JWTService
+from app.services.jwt_process import JWTService
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.config.client_db import get_conn_db
 from app.repository.user import get_user

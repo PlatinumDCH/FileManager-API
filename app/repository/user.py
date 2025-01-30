@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from app.utils.pass_serv import Hasher
+from app.services.pass_serv import Hasher
 from app.models.user_model import User
 
 async def create_new_user(body, db:AsyncSession):
