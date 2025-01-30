@@ -1,4 +1,5 @@
 from .base_model import BaseModel
+from .user_model import User
 
-__all__ = ["BaseModel"]
+__all__ = ["BaseModel", "User"]
 metadata = BaseModel.metadata
