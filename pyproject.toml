@@ -18,6 +18,13 @@ greenlet = "^3.1.1"
 boto3 = {extras = ["crt"], version = "^1.36.8"}
 minio = "^7.2.15"
 aiofiles = "^24.1.0"
+bcrypt = "^4.2.1"
+pyjwt = "^2.10.1"
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+pytz = "^2024.2"
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+types-python-jose = "^3.3.4.20240106"
+types-pytz = "^2024.2.0.20241221"
 
 
 [build-system]

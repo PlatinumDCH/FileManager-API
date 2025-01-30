@@ -9,6 +9,11 @@ class Settings(BaseSettings):
     MINIO_SECEET_KEY: str = 'secter'
     MINIO_SECURE: bool = True
 
+    SECRET_KEY_JWT:str = '**************************************'   
+    ALGORITHM: str = "******"  
+
+    access_token: str = "access_token"
+    
     model_config = SettingsConfigDict(
         extra="ignore", 
         env_file=".env", 
