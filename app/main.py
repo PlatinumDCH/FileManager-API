@@ -1,11 +1,17 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
+from app.routes import minio_routes
 
 
-from app.config.database import get_conn_db
+from app.config.client_db import get_conn_db
 
 app = FastAPI()
+
+app.include_router(
+    minio_routes.router,
+    prefix='',
+    tags=['minio'])
 
 @app.get('/')
 async def homepage():
