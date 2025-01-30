@@ -11,11 +11,13 @@ fastapi = {extras = ["standard"], version = "^0.115.7"}
 pydantic = "^2.10.6"
 sqlalchemy = "^2.0.37"
 alembic = "^1.14.1"
-minio = "^7.2.15"
 pydantic-settings = "^2.7.1"
 python-dotenv = "^1.0.1"
 asyncpg = "^0.30.0"
 greenlet = "^3.1.1"
+boto3 = {extras = ["crt"], version = "^1.36.8"}
+minio = "^7.2.15"
+aiofiles = "^24.1.0"
 
 
 [build-system]
