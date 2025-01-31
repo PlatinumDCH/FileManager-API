@@ -2,6 +2,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from fastapi import APIRouter, status, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.schemes.reset_password import ResetPasswordSchema
 from app.config.logger import logger
 from app.models.user_model import User
 from app.dependencies.security import auth_serv
@@ -64,4 +65,34 @@ async def login(
 async def get_me(user:User = Depends(auth_serv.get_current_user)):
     return {
         'message':'corectly work'
+    }
+
+@router.post('/reset_password_request')
+async def forgot_password(
+    body:ResetPasswordSchema,
+    request:Request,
+    db:AsyncSession=Depends(get_conn_db)
+):
+    """
+    send mail link to page forgot password
+
+    get userEmail by email /email-None
+    verify email
+    create token resetPsword
+    send email to emailService
+    """
+    curent_user = await repo_user.get_user_by_email(body.email, db)
+    if not curent_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail='User not found'
+        )
+
+    await email_process.email_service.process_email_change_pass(
+        curent_user,
+        request,
+        db
+    )
+    return {
+        'message':'Check you email for reset password'
     }

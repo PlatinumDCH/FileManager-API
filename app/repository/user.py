@@ -1,17 +1,14 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
-from typing import Optional
-
 
 from app.models.token_model import UserTokens
 from app.models.user_model import User
-from app.schemes.token import TokenUpdateRequest
 from app.utils.pass_serv import Hasher
 from app.models.user_model import User
 from app.schemes.user import ResendEmail
 
 
-async def get_user_by_email(email: str, db: AsyncSession) -> Optional[User]:
+async def get_user_by_email(email: ResendEmail, db: AsyncSession):
     """
     Get user by him email
     :param email: email adres
@@ -23,7 +20,7 @@ async def get_user_by_email(email: str, db: AsyncSession) -> Optional[User]:
     return result.scalars().first()
 
 
-async def confirmed_email(email: str, db: AsyncSession) -> None:
+async def confirmed_email(email: ResendEmail, db: AsyncSession) -> None:
     user = await get_user_by_email(email, db)
     if user:
         user.confirmed = True
@@ -104,3 +101,11 @@ async def update_token(
     except Exception as err:
         await db.rollback()
         raise err
+
+
+async def update_user_password(user: User, password: str, db: AsyncSession):
+    user = await get_user_by_email(user.email, db=db)
+    user.hashed_password = password
+    await db.commit()
+    await db.refresh(user)
+    return user

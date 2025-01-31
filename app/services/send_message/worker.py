@@ -47,6 +47,8 @@ async def process_message(message: IncomingMessage):
                     template_body={"host": host, "username": username, "token": token},
                     subtype=MessageType.html,
                 )
+                logger.info(f'{host}password_reset/{token}')
+
                 template_name = "password_reset/password_reset.html"
 
             elif message_type == "confirm_email":
