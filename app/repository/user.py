@@ -1,36 +1,65 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
+from typing import Optional
+
 
 from app.models.token_model import UserTokens
-from app.schemes.token import TokenUpdateRequest
-from app.services.pass_serv import Hasher
 from app.models.user_model import User
+from app.schemes.token import TokenUpdateRequest
+from app.utils.pass_serv import Hasher
+from app.models.user_model import User
+from app.schemes.user import ResendEmail
 
-async def create_new_user(body, db:AsyncSession):
+
+async def get_user_by_email(email: str, db: AsyncSession) -> Optional[User]:
+    """
+    Get user by him email
+    :param email: email adres
+    :param db: session
+    :returns: User object or None
+    """
+    query = select(User).filter(User.email == email)
+    result = await db.execute(query)
+    return result.scalars().first()
+
+
+async def confirmed_email(email: str, db: AsyncSession) -> None:
+    user = await get_user_by_email(email, db)
+    if user:
+        user.confirmed = True
+        await db.commit()
+        await db.refresh(user)
+
+
+async def create_new_user(body, db: AsyncSession):
     new_user = User(
-       email = body.email,
-       user_name = body.user_name,
-       hashed_password = body.password_plain,
-       is_active = True)
+        email=body.email,
+        user_name=body.user_name,
+        hashed_password=body.password_plain,
+        is_active=True,
+    )
     db.add(new_user)
     await db.commit()
     await db.refresh(new_user)
     return new_user
 
-async def exist_user(email:str, db: AsyncSession)->bool:
+
+async def exist_user(email: str, db: AsyncSession) -> bool:
     """check if email exist in tableUser, unicValue"""
     query = select(User).filter(User.email == email)
     result = await db.execute(query)
     user = result.scalar_one_or_none()
     return user is not None
 
-async def get_user(email:str,db: AsyncSession):
+
+async def get_user(email: str, db: AsyncSession):
     """return user, user email"""
     result = await db.execute(select(User).filter(User.email == email))
     user = result.scalars().first()
     return user
 
-async def autenticate_user(email:str, passord:str, db:AsyncSession):
+
+async def autenticate_user(email: str, passord: str, db: AsyncSession):
     user = await get_user(email, db)
     if not user:
         return False
@@ -38,7 +67,10 @@ async def autenticate_user(email:str, passord:str, db:AsyncSession):
         return False
     return user
 
-async def update_token(user: User,token: str, token_type:str, db: AsyncSession)->None:
+
+async def update_token(
+    user: User, token: str | None, token_type: str, db: AsyncSession
+) -> None:
     """
     universal update userToken in database
     :param user: object TableUser
@@ -51,7 +83,7 @@ async def update_token(user: User,token: str, token_type:str, db: AsyncSession)-
         user_query = select(UserTokens).filter_by(user_id=user.id)
         result = await db.execute(user_query)
         user_tokens = result.scalar_one_or_none()
-        
+
         if user_tokens:
             setattr(user_tokens, token_type, token)
             update_query = (

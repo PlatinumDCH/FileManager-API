@@ -18,7 +18,7 @@ router = APIRouter()
 
 
 @router.post("/signup", response_model=ShowUser, status_code=status.HTTP_201_CREATED)
-async def create_user(body: UserCreate, db: AsyncSession = Depends(get_conn_db), request=Request):
+async def create_user(body: UserCreate, request:Request, db: AsyncSession = Depends(get_conn_db)):
 
     if await repo_user.exist_user(body.email, db):
         raise HTTPException(
@@ -41,6 +41,13 @@ async def login(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
         )
+    
+    if not user.confirmed:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail='Account not confirmed, check email'
+        )
+    
     encode_access_token = await jwt_process.AccessTokenService().create_access_token(
         data={"sub": user.email}
     )

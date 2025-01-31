@@ -37,7 +37,6 @@ async def process_message(message: IncomingMessage):
                 host = task_data.get('host')
                 message_type = task_data.get('queue_name')
                 token = task_data.get('token')
-
             except KeyError as err:
                 return
 
@@ -57,8 +56,10 @@ async def process_message(message: IncomingMessage):
                     template_body={"host": host, "username": username, "token": token},
                     subtype=MessageType.html,
                 )
+                exemple = f'{host}email_process/confirmed_email/{token}'
+                logger.info(exemple)
                 template_name = "email_confirm/email_confirm.html"
-                logger.info('Uno uno uno')
+
             else:
                 return
             fm = FastMail(conf)

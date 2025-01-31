@@ -13,3 +13,6 @@ class ShowUser(BaseModel):
 
     class Config():
         from_attributes = True
+
+class ResendEmail(BaseModel):
+    email: EmailStr

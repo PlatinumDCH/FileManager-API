@@ -43,7 +43,7 @@ class EmailService:
             "username": user.user_name,
             "host": str(request.base_url),
             "queue_name": "confirm_email",
-            "token": settings.email_token,
+            "token": email_token,
         }
         await self.send_email(email_task)
 
@@ -62,7 +62,7 @@ class EmailService:
             "username": user.user_name,
             "host": str(request.base_url),
             "queue_name": "reset_password",
-            "token": settings.reset_password_token,
+            "token": re_pass_token,
         }
         await self.send_email(email_task)
 
