@@ -5,7 +5,7 @@ from jose import JWTError, jwt
 import pytz
 from abc import ABC, abstractmethod
 
-from app.services.jwt_process import JWTService
+from app.services.jwt_process import BaseWJTService
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.config.client_db import get_conn_db
 from app.repository.user import get_user
@@ -36,7 +36,7 @@ class AuthService(ConstructionAuthService):
             headers={"WWW-Authenticate": "Bearer"},
         )
         try:
-            email = await JWTService().decode_token(token, settings.access_token)
+            email = await BaseWJTService().decode_token(token, settings.access_token)
             if email is None:
                 raise credential_exeptions
         except JWTError:

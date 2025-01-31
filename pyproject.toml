@@ -7,7 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-fastapi = {extras = ["standard"], version = "^0.115.7"}
+fastapi = {extras = ["standard"], version = "^0.115.8"}
 pydantic = "^2.10.6"
 sqlalchemy = "^2.0.37"
 alembic = "^1.14.1"
@@ -25,7 +25,13 @@ pytz = "^2024.2"
 python-jose = {extras = ["cryptography"], version = "^3.3.0"}
 types-python-jose = "^3.3.4.20240106"
 types-pytz = "^2024.2.0.20241221"
+aio-pika = "^9.5.4"
+fastapi-mail = "^1.4.2"
+pytest = "^8.3.4"
 
+
+[tool.poetry.group.dev.dependencies]
+pytest-asyncio = "^0.25.3"
 
 [build-system]
 requires = ["poetry-core"]

@@ -1,22 +1,24 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, update
 
+from app.models.token_model import UserTokens
+from app.schemes.token import TokenUpdateRequest
 from app.services.pass_serv import Hasher
 from app.models.user_model import User
 
 async def create_new_user(body, db:AsyncSession):
     new_user = User(
        email = body.email,
+       user_name = body.user_name,
        hashed_password = body.password_plain,
-       is_active = True,
-    )
-
+       is_active = True)
     db.add(new_user)
     await db.commit()
     await db.refresh(new_user)
     return new_user
 
 async def exist_user(email:str, db: AsyncSession)->bool:
+    """check if email exist in tableUser, unicValue"""
     query = select(User).filter(User.email == email)
     result = await db.execute(query)
     user = result.scalar_one_or_none()
@@ -35,3 +37,38 @@ async def autenticate_user(email:str, passord:str, db:AsyncSession):
     if not Hasher.verify_password(passord, user.hashed_password):
         return False
     return user
+
+async def update_token(user: User,token: str, token_type:str, db: AsyncSession)->None:
+    """
+    universal update userToken in database
+    :param user: object TableUser
+    :param token: new value token
+    :param token_type: type token (e.g., "refresh_token")
+    :parm db: session db
+    :return: None
+    """
+    try:
+        user_query = select(UserTokens).filter_by(user_id=user.id)
+        result = await db.execute(user_query)
+        user_tokens = result.scalar_one_or_none()
+        
+        if user_tokens:
+            setattr(user_tokens, token_type, token)
+            update_query = (
+                update(UserTokens)
+                .where(UserTokens.user_id == user.id)
+                .values(**{token_type: token})
+            )
+            await db.execute(update_query)
+
+        else:
+            new_token = UserTokens(user_id=user.id, **{token_type: token})
+            db.add(new_token)
+            user_tokens = new_token
+
+        await db.commit()
+        await db.refresh(user_tokens)
+
+    except Exception as err:
+        await db.rollback()
+        raise err
