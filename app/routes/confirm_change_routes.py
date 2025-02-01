@@ -15,6 +15,7 @@ from app.config.client_db import get_conn_db
 
 router = APIRouter()
 
+
 @router.get("/confirmed_email/{token}")
 async def confirmed_email(token: str, db: AsyncSession = Depends(get_conn_db)):
     """
@@ -53,7 +54,7 @@ async def request_email(
     :returns: shadow pixel
 
     """
-    print(f'{username} open email')
+    print(f"{username} open email")
     return FileResponse(
         "app/templates/static/open_check.png",
         media_type="image/png",
@@ -64,7 +65,7 @@ async def request_email(
 
 @router.post("/re_email")
 async def resend_email_confirm(
-    email: ResendEmail, request: Request, db: AsyncSession = Depends(get_conn_db)
+    body: ResendEmail, request: Request, db: AsyncSession = Depends(get_conn_db)
 ):
     """
     email confirm, repeat send email
@@ -74,42 +75,56 @@ async def resend_email_confirm(
     :returns : message status send email
     :raises: emeil yield confirm
     """
-    user = await repo_user.get_user_by_email(email, db)
+    user = await repo_user.get_user_by_email(body.email, db)
     if user:
         if user.confirmed:
             return {"message": "You email is already confirmed"}
-        await email_service.pocess_email_confirmation(user, request, db)
+        await email_service.process_email_confirmation(user, request, db)
     return {"message": "Email send, check you post for confirmation"}
 
-@router.post('/reset-password', response_model=SuccesMessage)
+
+@router.post("/reset-password", response_model=SuccesMessage)
 async def reset_password(
-    rfp: ResetForgerPassword,
-    db: AsyncSession = Depends(get_conn_db)
+    rfp: ResetForgerPassword, db: AsyncSession = Depends(get_conn_db)
 ):
     try:
         info = await jwt_process.BaseWJTService().decode_token(
-            rfp.secret_token,
-            settings.reset_password_token
+            rfp.secret_token, settings.reset_password_token
         )
         if info is None:
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                                detail="Invalid Password Reset Payload or Reset Link Expired")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Invalid Password Reset Payload or Reset Link Expired",
+            )
         if rfp.new_password != rfp.confirm_password:
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                                detail='new password and confirm password are not same.')
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="new password and confirm password are not same.",
+            )
         user = await repo_user.get_user_by_email(info, db)
         if user is None:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                                detail='Verification error, user not found')
-        identic_password =  Hasher.verify_password(rfp.new_password, user.hashed_password)
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Verification error, user not found",
+            )
+        identic_password = Hasher.verify_password(
+            rfp.new_password, user.hashed_password
+        )
         if identic_password:
-            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                                detail='New password is the same as old password')
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="New password is the same as old password",
+            )
         hashed_password = Hasher.get_password_hesh(rfp.new_password)
         await repo_user.update_user_password(user, hashed_password, db)
         await repo_user.update_token(user, None, settings.reset_password_token, db)
-        return {'success': True, 'status_code': status.HTTP_200_OK,
-                 'message': 'Password Rest Successfull!'}
+        return {
+            "success": True,
+            "status_code": status.HTTP_200_OK,
+            "message": "Password Rest Successfull!",
+        }
     except HTTPException as err:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail='Some thing unexpected happened')
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Some thing unexpected happened",
+        )

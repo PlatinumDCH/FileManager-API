@@ -29,7 +29,7 @@ async def create_user(body: UserCreate, request:Request, db: AsyncSession = Depe
     body.password_plain = Hasher.get_password_hesh(body.password_plain)
     new_user = await repo_user.create_new_user(body, db)
     logger.info(f'Create user {new_user.email}${new_user.user_name}')
-    await email_process.email_service.pocess_email_confirmation(new_user, request, db)
+    await email_process.email_service.process_email_confirmation(new_user, request, db)
     return new_user
 
 @router.post("/login", response_model=Token)

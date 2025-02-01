@@ -1,5 +1,4 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import ConfigDict
 
 class Settings(BaseSettings):
     PG_URL: str = "postgresql+asyncpg://postgres:000000@localhost:5432/contacts"

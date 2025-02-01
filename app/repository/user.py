@@ -8,7 +8,7 @@ from app.models.user_model import User
 from app.schemes.user import ResendEmail
 
 
-async def get_user_by_email(email: ResendEmail, db: AsyncSession):
+async def get_user_by_email(email, db: AsyncSession):
     """
     Get user by him email
     :param email: email adres
@@ -20,7 +20,7 @@ async def get_user_by_email(email: ResendEmail, db: AsyncSession):
     return result.scalars().first()
 
 
-async def confirmed_email(email: ResendEmail, db: AsyncSession) -> None:
+async def confirmed_email(email, db: AsyncSession) -> None:
     user = await get_user_by_email(email, db)
     if user:
         user.confirmed = True
@@ -41,7 +41,7 @@ async def create_new_user(body, db: AsyncSession):
     return new_user
 
 
-async def exist_user(email: str, db: AsyncSession) -> bool:
+async def exist_user(body: str, db: AsyncSession) -> bool:
     """check if email exist in tableUser, unicValue"""
     query = select(User).filter(User.email == email)
     result = await db.execute(query)
@@ -104,7 +104,8 @@ async def update_token(
 
 
 async def update_user_password(user: User, password: str, db: AsyncSession):
-    user = await get_user_by_email(user.email, db=db)
+    user_object = ResendEmail(email = user.email)
+    user = await get_user_by_email(user_object, db=db)
     user.hashed_password = password
     await db.commit()
     await db.refresh(user)
