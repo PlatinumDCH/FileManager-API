@@ -17,9 +17,10 @@ REST API for  download, save and contlor files. Example: storage docks, images a
   - Generate temporary download links
   - File versioning support
 
-! [alt text](app/templates/static/cofe.jpg)
 
-```FileManager-API/
+![alt text](services/mail/templates/static/cofe.jpg)
+
+```
 ├── app/
 │   ├── api/                     # basic endpoint's
 │   │   ├── v1/                  # version API
@@ -52,3 +53,4 @@ REST API for  download, save and contlor files. Example: storage docks, images a
 ├── Dockerfile                   # Dockerfile by FastAPI app
 ├── requirements.txt             # dependes Python
 └── README.md                    # documentation project```
+```
