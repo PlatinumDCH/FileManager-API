@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     MINIO_ACCESS_KEY: str = 'secter'
     MINIO_SECEET_KEY: str = 'secter'
     MINIO_SECURE: bool = True
+    BUCKET_NAME: str = "test-name"
 
     SECRET_KEY_JWT:str = '**************************************'   
     ALGORITHM: str = "******"  
