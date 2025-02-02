@@ -17,8 +17,7 @@ REST API for  download, save and contlor files. Example: storage docks, images a
   - Generate temporary download links
   - File versioning support
 
-
-![alt text](app/templates/static/cofe.jpg)
+! [alt text](app/templates/static/cofe.jpg)
 
 ```FileManager-API/
 ├── app/
