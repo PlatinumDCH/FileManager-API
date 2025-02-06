@@ -4,19 +4,19 @@ from fastapi import APIRouter, Request, Depends
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import settings
 from app.api.v1.dependecies.client_db import get_conn_db
-from app.core.security.jwt import jwt_manager
 
-from app.api.v1.dependecies.security import role_required
+from app.core.security.jwt import token_manager, TokenType
+
 from app.core.security.security_password import Hasher
 from app.api.v1.dependecies.security import AuthService
-from app.db import crud as user_crud
+from app.db.crud import user_repository
 from app.db import schemas as shs
 from app.utils.logger import logger
 from services.mail.email_manager import email_manager
 
-router = APIRouter(prefix="/api/v1/users")
+router = APIRouter(prefix="/auth")
+
 
 
 @router.post("/register", response_model=shs.ResponseUser, status_code=200)
@@ -25,13 +25,13 @@ async def register_user(
     request : Request,
     session: AsyncSession = Depends(get_conn_db),
 ):
-    if await user_crud.exist_user(body.email, session):
+    if await user_repository.exist_user(body.email, session):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="accaunt already exists"
         )
 
     body.password = Hasher.get_password_hash(body.password)
-    new_user = await user_crud.create_new_user(body, session)
+    new_user = await user_repository.create_new_user(body, session)
 
     logger.info(f"Register new user {body.user_name}--{body.email}")
 
@@ -55,7 +55,7 @@ async def autorization(
     save refreshToken to database
     return ResponseAutorization
     """
-    user = await user_crud.autenticate_user(
+    user = await user_repository.autenticate_user(
         email=form_data.username, password=form_data.password, session=session
     )
 
@@ -72,14 +72,18 @@ async def autorization(
         )
     
     # validation confirmed user email adress
-    encode_access_token = await jwt_manager.create_access_token(
-        data={"sub": user.email}
-    )
-    encode_refresh_token = await jwt_manager.create_refresh_token(
-        data={"sub": user.email}
-    )
-    await user_crud.update_token(
-        user, encode_refresh_token, settings.refresh_token, session
+    encode_access_token = await token_manager.create_token(
+        TokenType.ACCESS,
+        data={"sub": user.email})
+    encode_refresh_token = await token_manager.create_token(
+        TokenType.REFRESH,
+        data={"sub": user.email})
+    
+    await user_repository.update_token(
+        user, 
+        encode_refresh_token, 
+        TokenType.REFRESH, 
+        session
     )
     return shs.ResponseAutorization(access_token=encode_access_token)
 
@@ -92,7 +96,7 @@ async def logout(
     """
     clear refresh token in database
     """
-    await user_crud.update_token(auth_user, None, settings.refresh_token, session)
+    await user_repository.update_token(auth_user, None, TokenType.REFRESH, session)
     return {"message": "Logged out successfully"}
 
 
@@ -105,25 +109,6 @@ async def me(
     headers Autorization: Bearer <token>
     """
     return shs.ResponseUser.model_validate(auth_user)
-
-
-# @router.put("/update-me-email", response_model=UpdateResponse)
-# async def update_email(body: UpdateEmail):
-#     """
-#     update user email
-#     headers Autirization: Bearer <token>
-#     """
-#     pass
-
-
-# @router.put("/change-password", response_model=UpdateResponse)
-# async def change_password(body: UpdatePassword):
-#     """
-#     update user passwordd
-#     headers Autorization: Bearer <token>
-#     """
-#     return {"message": "Password changeed successfully"}
-
 
 @router.delete("/me")
 async def delete_me(
@@ -138,13 +123,5 @@ async def delete_me(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
-    await user_crud.delete_user_from_db(auth_user, session)
+    await user_repository.delete_user_from_db(auth_user, session)
     return {"message": "User deleted succesfully"}
-
-
-
-
-
-# @router.post("/forgot-password")
-# async def forgot_password(body: RequestForgotPassword):
-#     return {"message": "Password reset link sent to you email"}

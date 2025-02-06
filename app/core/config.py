@@ -2,6 +2,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     PG_URL: str = "postgresql+asyncpg://postgres:000000@localhost:5432/contacts"
+    database_url_test:str = "sqlite+aiosqlite:///:memory:"
 
     MINIO_URL: str = '127.0.0.1:9090'
     MINIO_ACCESS_KEY: str = 'secter'
@@ -11,12 +12,7 @@ class Settings(BaseSettings):
 
     SECRET_KEY_JWT:str = '**************************************'   
     ALGORITHM: str = "******"  
-
-    refresh_token: str = "refresh_token"
-    access_token: str = "access_token"
-    reset_password_token: str = "reset_password_token"
-    email_token: str = "email_token"
-    
+ 
     MAIL_USERNAME:str = 'exemple@gmail.com'
     MAIL_PASSWORD: str = 'secret'
     MAIL_PORT: int = 111

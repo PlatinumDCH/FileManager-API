@@ -26,7 +26,6 @@ def send_email(to_email, subject, html_content):
     try:
         with smtplib.SMTP_SSL(settings.MAIL_SERVER, settings.MAIL_PORT) as server:
             server.login(settings.MAIL_USERNAME, settings.MAIL_PASSWORD)
-            # print(msg)
             server.send_message(msg)
     except Exception as e:
         raise RuntimeError(f'SMTP error; {str(e)}')

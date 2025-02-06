@@ -1,13 +1,14 @@
 from fastapi import APIRouter, Depends
 from fastapi import HTTPException, status
 
-from app.db import crud as user_crud
+from app.db.crud import user_repository
 from app.api.v1.dependecies.client_db import get_conn_db
+
 from app.api.v1.dependecies.security import role_required 
 from app.db import schemas as shs
 from app.core.config import settings
 
-router = APIRouter(prefix='/api/v1/admin')
+router = APIRouter(prefix='/admin')
 
 
 @router.get(
@@ -20,7 +21,7 @@ async def get_all_user_admin(session=Depends(get_conn_db)):
     from admin, get all user
     headers Autorization: Bearer <token>
     """
-    return await user_crud.get_all_users(session)
+    return await user_repository.get_all_users(session)
 
 @router.get(
         "/{user_id}", 
@@ -32,7 +33,7 @@ async def get_info_user(user_id: int, session = Depends(get_conn_db)):
     from admin, get all user
     headers Autorization: Bearer <token>
     """
-    result = await user_crud.get_user_by_id(user_id, session)
+    result = await user_repository.get_user_by_id(user_id, session)
     if not result:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -46,7 +47,7 @@ async def block_user(user_id: int, session = Depends(get_conn_db)):
     from admin, set active status user / bann
     headers Autorization: Bearer <token>
     """
-    result  = await user_crud.set_active_user(user_id,session)
+    result  = await user_repository.set_active_user(user_id,session)
     if not result:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

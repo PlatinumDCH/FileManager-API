@@ -6,19 +6,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from services.mail.email_manager import email_manager
 from app.core.security.security_password import Hasher
-from app.db import crud as user_crud
+from app.db.crud import user_repository
 from app.api.v1.dependecies.client_db import get_conn_db
-from app.core.security.jwt import jwt_manager
+from app.core.security.jwt import token_manager, TokenType
 from app.db import schemas as shs
 from app.core.config import settings
 
 
-from pydantic import BaseModel, EmailStr
-
-router = APIRouter(prefix="/api/v1/account")
-
-
-
+router = APIRouter(prefix="/account")
 
 
 @router.post("/forgot-password", status_code=status.HTTP_200_OK)
@@ -28,7 +23,7 @@ async def forgot_password(
     session: AsyncSession = Depends(get_conn_db)
 ):
     """
-    send mail link to page forgot password
+    send email link to page forgot password
 
     get userEmail by email /email-None
     verify email
@@ -36,17 +31,14 @@ async def forgot_password(
     send email to emailService
     """
 
-    curent_user = await user_crud.get_user_by_email(body.email, session)
+    curent_user = await user_repository.get_user_by_email(body.email, session)
     if not curent_user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="User not found"
         )
-
     await email_manager.process_email_change_pass(curent_user, request, session)
-
-    return {
-        "message": "Check you email for reset password",
-    }
+    return {"message": "Check you email for reset password"}
 
 
 @router.post("/reset-password", response_model=shs.SuccesMessage)
@@ -65,10 +57,11 @@ async def reset_password(
                     5.save new hashed password to UserObject
     """
     try:
-        user_email = await jwt_manager.decode_token(
-            body.reset_password_token, settings.reset_password_token
+        pyload = await token_manager.decode_token(
+            token_type=TokenType.RESET_PASSWORD,
+            token = body.reset_password_token
         )
-        if user_email is None:
+        if (user_email := pyload.get('sub')) is None:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Invalid Password Reset Payload or Reset Link Expired",
@@ -78,22 +71,33 @@ async def reset_password(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="New password and confirm password are not same.",
             )
-        user = await user_crud.get_user_by_email(user_email, session)
+        user = await user_repository.get_user_by_email(user_email, session)
         if user is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Verification error, user not found",
             )
-        identic_password = Hasher.verify_password(body.new_password, user.password)
+        identic_password = Hasher.verify_password(
+            plain_password=body.new_password, 
+            hashed_password=user.password)
         if identic_password:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="New password is the same as old password",
             )
-        hashed_password = Hasher.get_password_hash(body.new_password)
-        await user_crud.update_user_password(user, hashed_password, session)
+        hashed_password = Hasher.get_password_hash(
+            password=body.new_password
+            )
+        await user_repository.update_user_password(
+            user=user, 
+            hashed_password=hashed_password, 
+            session=session)
 
-        await user_crud.update_token(user, None, settings.reset_password_token, session)
+        await user_repository.update_token(
+            user=user, 
+            token=None,
+            token_type=TokenType.RESET_PASSWORD,
+            db=session)
         return {
             "success": True,
             "status_code": status.HTTP_200_OK,
@@ -120,7 +124,9 @@ async def resend_confirmation_email(
     :returns : message status send email
     :raises: emeil yield confirm
     """
-    curent_user = await user_crud.get_user_by_email(body.email, session)
+    curent_user = await user_repository.get_user_by_email(
+        email=body.email, 
+        session=session)
     if not curent_user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
@@ -148,8 +154,16 @@ async def confirm_email(
     :returns: message, sucesful & Exception (user not found)
 
     """
-    email = await jwt_manager.decode_token(body.email_token, settings.email_token)
-    curent_user = await user_crud.get_user_by_email(email, session)
+    pyload = await token_manager.decode_token(
+        token_type=TokenType.RESET_PASSWORD,
+        token = body.email_token
+        )
+    if (user_email := pyload.get('sub')) is None:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Invalid Password Reset Payload or Reset Link Expired",
+            )
+    curent_user = await user_repository.get_user_by_email(user_email, session)
     if curent_user is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -158,8 +172,12 @@ async def confirm_email(
     if curent_user.confirmed:
         return {"message": "Your email already confirmed"}
 
-    await user_crud.confirmed_email(user=curent_user, session=session, value=True)
-    await user_crud.update_token(curent_user, None, settings.email_token, session)
+    await user_repository.confirmed_email(user=curent_user, session=session, value=True)
+    await user_repository.update_token(
+        curent_user, 
+        None, 
+        TokenType.EMAIL, 
+        session)
     return {"message": "Email confirmed"}
 
 @router.get("/track-email-open/{username}")

@@ -12,7 +12,7 @@ from services.mail.config.celery_app import app
 
 @app.task(queue='email_verification', bind=True, max_retries=3)
 def send_verification_email(self, email, username, host, token):
-    """Отправка письма для подтверждения email."""
+    """send email, thema: confirm emal address"""
     try:
         html_content = render_template(
             'verification_email.html',
@@ -26,7 +26,7 @@ def send_verification_email(self, email, username, host, token):
 
 @app.task(queue='password_reset', bind=True, max_retries=3)
 def send_password_reset_email(self, email, username, host, token):
-    """Отправка письма для сброса пароля."""
+    """Send emdil, thema: reser password"""
     try:
         html_content = render_template(
             'reset_password.html',
