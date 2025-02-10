@@ -1,25 +1,3 @@
-# import io
-# import aioboto3
-# from services.minio_serv.client_minio import get_minio_client
-# from app.core.config import settings
-
-# async def upload_file_minio(file_stream:io.BytesIO, file_name:str):
-#     session = aioboto3.Session()
-
-#     async with session.client(
-#         's3',
-#         endpoint_url=settings.MINIO_URL,
-#         aws_access_key_id=settings.MINIO_ACCESS_KEY,
-#         aws_secret_access_key=settings.MINIO_SECEET_KEY
-#     ) as client:
-#         file_stream.seek(0)
-
-#         await client.put_object(
-#             Bucket=settings.BUCKET_NAME,
-#             Key = file_name,
-#             Body = file_stream,
-#             )
-
 import aioboto3
 from fastapi import HTTPException, UploadFile
 from app.core.config import settings
@@ -43,6 +21,15 @@ class MinioHandler:
             raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
     
     async def get_file(self, file_name):
+        """pull file MinIO"""
+        try:
+            async with self.session.client("s3", endpoint_url=self.endpoint_url, **self.credentials) as s3:
+                await s3.get_object(
+                    Bucket=self.backet, Key=file_name
+                )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"pull file failed: {str(e)}")
+        
         async with self.session.client(
             's3',
             endpoint_url=self.endpoint_url,
@@ -51,25 +38,26 @@ class MinioHandler:
         ) as s3_client:
             response = await s3_client.get_object(Bucket=self.backet, Key=file_name)
             return await response['Body'].read()
+    
+    async def delete_file(self, file_name:str):
+        """delete file MinIO"""
+        try:
+            async with self.session.client("s3", endpoint_url=self.endpoint_url, **self.credentials) as s3:
+                await s3.delete_object(
+                    Bucket=self.backet, Key=file_name
+                )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Deleted failed: {str(e)}")
         
-    # def list(self):
-    #     objects = list(self.client.list_objects(self.bucket))
-    #     return [{"name": i.object_name, "last_modified": i.last_modified} for i in objects]
-
-    # def stats(self, name: str) -> minio.api.Object:
-    #     return self.client.stat_object(self.bucket, name)
-
-    # def download_file(self, name: str):
-    #     info = self.client.stat_object(self.bucket, name)
-    #     total_size = info.size
-    #     offset = 0
-    #     while True:
-    #         response = self.client.get_object(self.bucket, name, offset=offset, length=2048)
-    #         yield response.read()
-    #         offset = offset + 2048
-    #         if offset >= total_size:
-    #             break
-
+    async def exists_file(self, file_name:str):
+        """check type if exists in storage"""
+        try:
+            async with self.session.client("s3",
+            endpoint_url=self.endpoint_url, **self.credentials) as s3:
+                await s3.head_object(Bucket=self.backet, Key=file_name)
+            return True
+        except Exception:
+            return False
 
 minio_handler = MinioHandler(
     backet=settings.BUCKET_NAME,
