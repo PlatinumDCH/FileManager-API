@@ -6,8 +6,8 @@ from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
 
 import asyncio
 
-from services.mail.email_sender import render_template, send_email
-from services.mail.config.celery_app import app
+from services.mail_serv.email_sender import render_template, send_email
+from services.mail_serv.config.celery_app import app
 
 
 @app.task(queue='email_verification', bind=True, max_retries=3)

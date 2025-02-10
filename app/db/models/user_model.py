@@ -5,6 +5,7 @@ from sqlalchemy import (String, Boolean, DateTime, func)
 from app.utils.pack_roles import RoleSet              
 import app.db.models.base_model as base
 import app.db.models.token_model as token
+import app.db.models.files_model as user_files
 
 class User(base.BaseModel):
     __tablename__ = "users"
@@ -19,3 +20,4 @@ class User(base.BaseModel):
     confirmed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
 
     tokens: Mapped[list["token.UserTokens"]] = relationship("UserTokens", back_populates="user")
+    files: Mapped[list["user_files.Files"]] = relationship("Files", back_populates="user", cascade="all, delete-orphan")

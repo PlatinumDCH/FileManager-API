@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from services.mail.tasks import send_verification_email, send_password_reset_email
+from services.mail_serv.tasks import send_verification_email, send_password_reset_email
 from app.utils.logger import logger
 from app.core.config import settings
 from app.db.models.user_model import User

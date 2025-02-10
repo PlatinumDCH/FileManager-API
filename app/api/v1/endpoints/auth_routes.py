@@ -13,7 +13,7 @@ from app.api.v1.dependecies.security import AuthService
 from app.db.crud import user_repository
 from app.db import schemas as shs
 from app.utils.logger import logger
-from services.mail.email_manager import email_manager
+from services.mail_serv.email_manager import email_manager
 
 router = APIRouter(prefix="/auth")
 

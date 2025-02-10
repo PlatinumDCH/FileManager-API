@@ -8,7 +8,7 @@ from sqlalchemy.engine import Connection
 
 from alembic import context
 
-from app.config.settings import settings as app_settings
+from app.core.config import settings as app_settings
 from app.db.models import metadata
 
 # this is the Alembic Config object, which provides

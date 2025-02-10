@@ -2,6 +2,7 @@ from pydantic import BaseModel, EmailStr
 from datetime import datetime
 
 
+
 class RegisterUser(BaseModel):
     user_name: str
     email: EmailStr
@@ -50,3 +51,8 @@ class ResetForgotPassword(BaseModel):
 
 class RequestConfirmEmail(BaseModel):
     email_token: str
+
+class DonwloadFile(BaseModel):
+    user_id:int
+    file_name:str
+    

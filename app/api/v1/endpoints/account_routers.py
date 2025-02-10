@@ -4,7 +4,7 @@ from fastapi import HTTPException, status
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from services.mail.email_manager import email_manager
+from services.mail_serv.email_manager import email_manager
 from app.core.security.security_password import Hasher
 from app.db.crud import user_repository
 from app.api.v1.dependecies.client_db import get_conn_db
