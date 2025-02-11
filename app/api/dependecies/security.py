@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.security import OAuth2PasswordBearer
 
 from app.utils.logger import logger
-from app.api.v1.dependecies.client_db import get_conn_db
+from app.api.dependecies.client_db import get_conn_db
 from app.core.security.jwt import token_manager, TokenType
 from app.db.crud import user_repository
 

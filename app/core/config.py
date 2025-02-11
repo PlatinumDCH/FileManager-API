@@ -1,3 +1,4 @@
+from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
@@ -20,6 +21,8 @@ class Settings(BaseSettings):
 
     RABBITMQ_URL: str = 'amqp://test:test@127.0.0.1:5672/'
 
+    FileExtensionsPath: Path = Path('app/core/AllowedExtensions.json')
+    MAX_SIZE :int  = 5 * 1024 * 102
     model_config = SettingsConfigDict(
         extra="ignore", 
         env_file=".env", 

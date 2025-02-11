@@ -1,0 +1,21 @@
+{
+    "images": [
+      "jpg",
+      "jpeg",
+      "png",
+      "gif",
+      "bmp",
+      "tiff",
+      "webp",
+      "svg"
+    ],
+    "text_files": [
+      "txt",
+      "csv",
+      "md",
+      "pdf",
+      "docx",
+      "xlsx"
+    ]
+  }
+  

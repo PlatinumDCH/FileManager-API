@@ -4,12 +4,12 @@ from fastapi import APIRouter, Request, Depends
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.dependecies.client_db import get_conn_db
+from app.api.dependecies.client_db import get_conn_db
 
 from app.core.security.jwt import token_manager, TokenType
 
 from app.core.security.security_password import Hasher
-from app.api.v1.dependecies.security import AuthService
+from app.api.dependecies.security import AuthService
 from app.db.crud import user_repository
 from app.db import schemas as shs
 from app.utils.logger import logger

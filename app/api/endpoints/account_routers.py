@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from services.mail_serv.email_manager import email_manager
 from app.core.security.security_password import Hasher
 from app.db.crud import user_repository
-from app.api.v1.dependecies.client_db import get_conn_db
+from app.api.dependecies.client_db import get_conn_db
 from app.core.security.jwt import token_manager, TokenType
 from app.db import schemas as shs
 from app.core.config import settings

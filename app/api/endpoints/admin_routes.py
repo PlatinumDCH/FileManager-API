@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends
 from fastapi import HTTPException, status
 
 from app.db.crud import user_repository
-from app.api.v1.dependecies.client_db import get_conn_db
+from app.api.dependecies.client_db import get_conn_db
 
-from app.api.v1.dependecies.security import role_required 
+from app.api.dependecies.security import role_required 
 from app.db import schemas as shs
 from app.core.config import settings
 

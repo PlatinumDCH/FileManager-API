@@ -18,11 +18,15 @@ class DatabaseSessionManager:
         if self._session_maker is None:
             raise Exception("Session is not initialized")
         session = self._session_maker()
+        
         try:
             yield session
+
         except Exception as err:
-            await session.rollback()
+            if session.new or session.dirty:
+                await session.rollback()
             raise
+
         finally:
             await session.close()
 

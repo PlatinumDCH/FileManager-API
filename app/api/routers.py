@@ -1,9 +1,9 @@
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import account_routers
-from app.api.v1.endpoints import admin_routes
-from app.api.v1.endpoints import auth_routes
-from app.api.v1.endpoints import files_process
+from app.api.endpoints import account_routers
+from app.api.endpoints import admin_routes
+from app.api.endpoints import auth_routes
+from app.api.endpoints import files_process
 
 api_router = APIRouter()
 

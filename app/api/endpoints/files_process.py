@@ -13,41 +13,54 @@ from fastapi import (
 import io
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-import uuid
-from minio import Minio, S3Error
 
 from services.minio_serv.manager import minio_handler
 from app.db.crund_file import file_manager
 from app.core.config import settings
-from app.api.v1.dependecies.client_db import get_conn_db
-from app.db.schemas import DonwloadFile
+from app.api.dependecies.client_db import get_conn_db
+from app.api.dependecies.validate_file import FileExtensionValidator
+from app.api.dependecies.validate_file import get_file_extension_validator
 
 router = APIRouter(prefix="/files")
 
 
-@router.post("/upload")
+@router.post(
+        "/upload", 
+        status_code=status.HTTP_201_CREATED)
 async def upload_file(
     user_id: int,
     file: UploadFile = File(...),
     session: AsyncSession = Depends(get_conn_db),
+    file_extesions_validator: FileExtensionValidator = Depends(get_file_extension_validator)
 ):
     if not file or not file.filename:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="file without name or file not get",
+            detail="file without name or file received",
         )
 
-    # check access role file :todo
+    try:
+        file_type = await file_extesions_validator.validate(file.filename)
+    except HTTPException as error:
+        raise HTTPException(
+            status_code = error.status_code,
+            detail=f'Unsupported file extension for file "{file.filename}"' 
+        )
 
-    file_extension = file.filename.split(".")[-1]
-    unique_name = await file_manager.create_uniq_name(
-        user_id=user_id, file_extesion=file_extension
-    )
+    try:
+        unique_name = await file_manager.generate_uniq_filename(
+        user_id=user_id, file=file, file_type=file_type
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f'Error generating unique filename : {str(e)}'
+        )
     
-    MAX_SIZE = 5 * 1024 * 1024  # 5MB
+    
     file_size = file.size if file.size is not None else 0
 
-    if file_size  > MAX_SIZE:
+    if file_size  > settings.MAX_SIZE:
         raise HTTPException(
             status_code=400, 
             detail="File too large"
@@ -59,7 +72,7 @@ async def upload_file(
         session=session,
         user_id=user_id,
         file_name=file.filename,
-        path=unique_name,
+        file_path=unique_name,
         size=file_size,
     )
 
@@ -72,7 +85,7 @@ async def download_file(
     file_name: str = Query(..., description="original name file"),
     session: AsyncSession = Depends(get_conn_db),
 ):
-    file_record = await file_manager.get_uniq_name(
+    file_record = await file_manager.get_file_record(
         user_id=user_id, orig_file_name=file_name, session=session
     )
     if not file_record:
@@ -95,7 +108,7 @@ async def list_files(
     session: AsyncSession = Depends(get_conn_db),
 ):
     """get list file database by user"""
-    files = await file_manager.get_files_by_user(session=session, user_id=user_id)
+    files = await file_manager.get_files(session=session, user_id=user_id)
     if not files:
         return {"message": "User dont have upload files", "files": []}
     file_list = [
@@ -118,7 +131,7 @@ async def delete_file(
     session: AsyncSession = Depends(get_conn_db),
 ):
     """delete file MinIO DataBase"""
-    file_object = await file_manager.get_uniq_name(
+    file_object = await file_manager.get_file_record(
         user_id=user_id, orig_file_name=file_name, session=session
     )
     if not file_object:
@@ -127,7 +140,7 @@ async def delete_file(
     uniq_name = file_object.file_path
 
     await minio_handler.delete_file(uniq_name)
-    await file_manager.delete_file(file_object, session)
+    await file_manager.delete_file_record(file_object, session)
 
     return {
         "message": "File sucessfull deleted",
@@ -139,7 +152,8 @@ async def update_file(
     user_id:int = Query(..., description='Id user'),
     file_name:str = Query(..., description='Original name file'),
     new_file: UploadFile = File(...),
-    session = Depends(get_conn_db)
+    session = Depends(get_conn_db),
+    file_extesions_validator: FileExtensionValidator = Depends(get_file_extension_validator)
 ):
     if not new_file or not new_file.filename:
         raise HTTPException(
@@ -147,16 +161,23 @@ async def update_file(
             detail="file without name or file not get",
         )
     
-    MAX_SIZE = 5 * 1024 * 1024  # 5MB
     file_size = new_file.size if new_file.size is not None else 0
 
-    if file_size  > MAX_SIZE:
+    if file_size  > settings.MAX_SIZE:
         raise HTTPException(
             status_code=400, 
             detail="File too large"
             )
     
-    file_obj = await file_manager.get_uniq_name(
+    try:
+        file_type = await file_extesions_validator.validate(new_file.filename)
+    except HTTPException as error:
+        raise HTTPException(
+            status_code = error.status_code,
+            detail=f'Unsupported file extension for file "{new_file.filename}"' 
+        )
+    
+    file_obj = await file_manager.get_file_record(
         user_id=user_id,
         orig_file_name=file_name,
         session=session,
@@ -168,15 +189,14 @@ async def update_file(
             detail='File not found'
         )
     
-    
     old_unique_name = file_obj.file_path
     
     await minio_handler.delete_file(old_unique_name)
 
-    file_extension = new_file.filename.split(".")[-1]
-
-    new_unique_name = await file_manager.create_uniq_name(
-        user_id=user_id, file_extesion=file_extension
+    new_unique_name = await file_manager.generate_uniq_filename(
+        user_id=user_id, 
+        file=new_file,
+        file_type=file_type
     )
     
     await minio_handler.upload_file(new_unique_name, new_file)
@@ -204,7 +224,7 @@ async def check_file_exists(
     file_name:str = Query(..., description='Original file name'),
     session = Depends(get_conn_db)
 ):
-    file_obj = await file_manager.get_uniq_name(
+    file_obj = await file_manager.get_file_record(
         user_id=user_id,
         orig_file_name=file_name,
         session=session
