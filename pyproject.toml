@@ -37,6 +37,7 @@ aioboto3 = "13.3.0"
 s3fs = "^2025.2.0"
 types-aiofiles = "^24.1.0.20241221"
 boto3-stubs = "^1.36.17"
+python-magic = "^0.4.27"
 
 
 [tool.poetry.group.dev.dependencies]

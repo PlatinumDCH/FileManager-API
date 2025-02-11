@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from services.minio_serv.manager import minio_handler
 from app.db.crund_file import file_manager
 from app.core.config import settings
+from app.api.dependecies.security import AuthService
 from app.api.dependecies.client_db import get_conn_db
 from app.api.dependecies.validate_file import FileExtensionValidator
 from app.api.dependecies.validate_file import get_file_extension_validator
@@ -28,9 +29,9 @@ router = APIRouter(prefix="/files")
         "/upload", 
         status_code=status.HTTP_201_CREATED)
 async def upload_file(
-    user_id: int,
     file: UploadFile = File(...),
     session: AsyncSession = Depends(get_conn_db),
+    auth_user = Depends(AuthService().get_current_user),
     file_extesions_validator: FileExtensionValidator = Depends(get_file_extension_validator)
 ):
     if not file or not file.filename:
@@ -49,7 +50,7 @@ async def upload_file(
 
     try:
         unique_name = await file_manager.generate_uniq_filename(
-        user_id=user_id, file=file, file_type=file_type
+        user_id=auth_user.id, file=file, file_type=file_type
         )
     except ValueError as e:
         raise HTTPException(
@@ -70,7 +71,7 @@ async def upload_file(
 
     await file_manager.create_file(
         session=session,
-        user_id=user_id,
+        user_id=auth_user.id,
         file_name=file.filename,
         file_path=unique_name,
         size=file_size,
@@ -81,17 +82,22 @@ async def upload_file(
 
 @router.get("/download")
 async def download_file(
-    user_id: int = Query(...),
     file_name: str = Query(..., description="original name file"),
     session: AsyncSession = Depends(get_conn_db),
+    auth_user = Depends(AuthService().get_current_user),
 ):
-    file_record = await file_manager.get_file_record(
-        user_id=user_id, orig_file_name=file_name, session=session
+    file_object = await file_manager.get_file_record(
+        user_id=auth_user.id, orig_file_name=file_name, session=session
     )
-    if not file_record:
+    if not file_object:
         raise HTTPException(status_code=404, detail="File not found")
-    uniq_name = file_record.file_path
+    
+    uniq_name = file_object.file_path
+
     file_data = await minio_handler.get_file(uniq_name)
+
+    if file_data is None:
+        raise HTTPException(status_code=404, detail="File data not found")
 
     file_stream = io.BytesIO(file_data)
 
@@ -104,11 +110,11 @@ async def download_file(
 
 @router.get("/list-files")
 async def list_files(
-    user_id: int = Query(..., description="ID user"),
+    auth_user = Depends(AuthService().get_current_user),
     session: AsyncSession = Depends(get_conn_db),
 ):
     """get list file database by user"""
-    files = await file_manager.get_files(session=session, user_id=user_id)
+    files = await file_manager.get_files(session=session, user_id=auth_user.id)
     if not files:
         return {"message": "User dont have upload files", "files": []}
     file_list = [
@@ -126,13 +132,13 @@ async def list_files(
 
 @router.delete("/delete")
 async def delete_file(
-    user_id: int = Query(..., description="Id user"),
+    auth_user = Depends(AuthService().get_current_user),
     file_name: str = Query(..., description="Original FileName"),
     session: AsyncSession = Depends(get_conn_db),
 ):
     """delete file MinIO DataBase"""
     file_object = await file_manager.get_file_record(
-        user_id=user_id, orig_file_name=file_name, session=session
+        user_id=auth_user.id, orig_file_name=file_name, session=session
     )
     if not file_object:
         raise HTTPException(status_code=404, detail="File not found")
@@ -149,7 +155,7 @@ async def delete_file(
 
 @router.put("/update")
 async def update_file(
-    user_id:int = Query(..., description='Id user'),
+    auth_user = Depends(AuthService().get_current_user),
     file_name:str = Query(..., description='Original name file'),
     new_file: UploadFile = File(...),
     session = Depends(get_conn_db),
@@ -178,7 +184,7 @@ async def update_file(
         )
     
     file_obj = await file_manager.get_file_record(
-        user_id=user_id,
+        user_id=auth_user.id,
         orig_file_name=file_name,
         session=session,
 
@@ -194,7 +200,7 @@ async def update_file(
     await minio_handler.delete_file(old_unique_name)
 
     new_unique_name = await file_manager.generate_uniq_filename(
-        user_id=user_id, 
+        user_id=auth_user.id, 
         file=new_file,
         file_type=file_type
     )
@@ -220,12 +226,12 @@ async def update_file(
 
 @router.get("/file_exists")
 async def check_file_exists(
-    user_id:int = Query(..., description='User ID'),
+    auth_user = Depends(AuthService().get_current_user),
     file_name:str = Query(..., description='Original file name'),
     session = Depends(get_conn_db)
 ):
     file_obj = await file_manager.get_file_record(
-        user_id=user_id,
+        user_id=auth_user.id,
         orig_file_name=file_name,
         session=session
     )

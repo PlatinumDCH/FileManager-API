@@ -1,4 +1,4 @@
-import botocore
+import magic
 from fastapi import HTTPException, UploadFile
 from typing import Optional, BinaryIO
 
@@ -33,8 +33,16 @@ class MinioHandler:
         :raices HTTPException: If the upload fails.
         """
         try:
+            # mime = magic.Magic(mime=True)
+            # file_type = mime.from_buffer(await file.read())
+
             async with await self.client.get_client() as s3:
-                await s3.upload_fileobj(file.file, self.bucket, file_path)
+                await s3.upload_fileobj(
+                    file.file, 
+                    self.bucket, 
+                    file_path,
+                    # ExtraArgs={'ContentType':file_type}
+                )
             logger.info(f'File uploaded successfully to {file_path}')
         except Exception as e:
             logger.error(f'Upload failed: {str(e)}')
