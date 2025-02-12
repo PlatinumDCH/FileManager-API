@@ -5,7 +5,7 @@ from backend.app.utils.logger import logger
 from backend.app.core.config import settings
 from backend.app.db.models.user_model import User
 from backend.app.db.crud import user_repository
-from backend.app.core.security.jwt import token_manager, TokenType
+from backend.app.core.security.secure_token import token_manager, TokenType
 
 
 class EmailService:
