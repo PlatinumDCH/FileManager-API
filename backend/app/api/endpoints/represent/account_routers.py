@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi import Request
 
-from backend.app.api.dependecies.security import AuthService
+from backend.app.api.dependecies.security import AuthService2
 
 router = APIRouter(prefix='/account')
 
@@ -12,7 +12,7 @@ templates = Jinja2Templates(directory="/Users/plarium/Develop/project/FileManage
 @router.get('/dashboard', response_class=HTMLResponse)
 async def dashboard(
     request:Request,
-    auth_user = Depends(AuthService().get_current_user),
+    auth_user = Depends(AuthService2().get_current_user),
 ):
     """
     Render the dashboard page for autenticated users.

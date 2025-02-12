@@ -1,6 +1,6 @@
 import pytest
 from fastapi import HTTPException
-from app.core.config import settings
+from backend.app.core.config import settings
 import json
 from unittest.mock import AsyncMock, patch, MagicMock
 

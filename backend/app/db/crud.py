@@ -5,7 +5,7 @@ from backend.app.db.models.token_model import UserTokens
 from backend.app.core.security.security_password import Hasher
 from backend.app.db import schemas as shs
 from backend.app.db.models.user_model import User
-from backend.app.core.security.jwt import TokenType
+from backend.app.core.security.secure_token import TokenType
 
 class UserCrud:
 
@@ -49,7 +49,7 @@ class UserCrud:
         return user
 
     async def update_token(
-        self, user: User, token: str | None, token_type: TokenType, db: AsyncSession
+        self, user: User, token: str | None, token_type: str, db: AsyncSession
     ) -> None:
         """
         universal update userToken in database
@@ -65,16 +65,16 @@ class UserCrud:
             user_tokens = result.scalar_one_or_none()
 
             if user_tokens:
-                setattr(user_tokens, token_type.value, token)
+                setattr(user_tokens, token_type, token)
                 update_query = (
                     update(UserTokens)
                     .where(UserTokens.user_id == user.id)
-                    .values(**{token_type.value: token})
+                    .values(**{token_type: token})
                 )
                 await db.execute(update_query)
 
             else:
-                new_token = UserTokens(user_id=user.id, **{token_type.value: token})
+                new_token = UserTokens(user_id=user.id, **{token_type: token})
                 db.add(new_token)
                 user_tokens = new_token
 

@@ -1,5 +1,5 @@
 from fastapi.security import OAuth2PasswordRequestForm
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi import APIRouter, Form, Request, Depends
 from fastapi import HTTPException, status
 from fastapi.templating import Jinja2Templates
@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.api.dependecies.client_db import get_conn_db
 
-from backend.app.core.security.jwt import token_manager, TokenType
+from backend.app.core.security.secure_token import token_manager, TokenType
 
 from backend.app.core.security.security_password import Hasher
 from backend.app.api.dependecies.security import AuthService
@@ -73,7 +73,8 @@ async def register_user(
 @router.post("/login")
 async def autorization(
     request: Request,
-    form_data: OAuth2PasswordRequestForm = Depends(),
+    user_email = Form(...),
+    password = Form(...),
     session: AsyncSession = Depends(get_conn_db),
 ):
     """
@@ -87,7 +88,7 @@ async def autorization(
     return ResponseAutorization
     """
     user = await user_repository.autenticate_user(
-        email=form_data.username, password=form_data.password, session=session
+        email=user_email, password=password, session=session
     )
 
     if not user:
@@ -117,7 +118,8 @@ async def autorization(
 
     encode_access_token = await token_manager.create_token(
         TokenType.ACCESS,
-        data={"sub": user.email}
+        data={"sub": user.email},
+        expire_delta=60
     )
 
     encode_refresh_token = await token_manager.create_token(
@@ -128,22 +130,25 @@ async def autorization(
     await user_repository.update_token(
         user, 
         encode_refresh_token, 
-        TokenType.REFRESH, 
+        'refresh_token', 
         session
     )
 
-    response = RedirectResponse(
-        url='/account/dashboard',
-        status_code=status.HTTP_303_SEE_OTHER,
-        )
+    response = JSONResponse(
+        content={'access_token': encode_access_token}
+    )
     
+ 
     response.set_cookie(
         key='access_token',
         value=encode_access_token,
         httponly=True,
-        secure=True,
+        secure=False,
         samesite='lax'
     )
+    response.headers['Location'] = '/account/dashboard'
+    response.status_code = status.HTTP_303_SEE_OTHER
+    
     return response
 
 

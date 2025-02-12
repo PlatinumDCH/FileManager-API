@@ -1,42 +1,45 @@
 from jose import JWTError
-from fastapi import Depends, status, HTTPException
+from fastapi import Depends, Request, status, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi.security import OAuth2PasswordBearer
 
 from backend.app.utils.logger import logger
 from backend.app.api.dependecies.client_db import get_conn_db
-from backend.app.core.security.jwt import token_manager, TokenType
+from backend.app.core.security.secure_token import token_manager, TokenType
 from backend.app.db.crud import user_repository
 
 
+
 class AuthService:
-    auth2scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
-
     async def get_current_user(
-        self,
-        token: str = Depends(auth2scheme),
-        db: AsyncSession = Depends(get_conn_db),
+            self,
+            request: Request,
+            db:AsyncSession = Depends(get_conn_db)
     ):
-
         credential_exeptions = HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
+        token = request.cookies.get('access_token')
+
+        if token is None:
+            raise credential_exeptions
+
         try:
             pyload = await token_manager.decode_token(
                 token_type=TokenType.ACCESS,
-                token=token)
+                token=token
+            )
             if (user_email := pyload.get('sub')) is None:
                 raise credential_exeptions
-            
         except JWTError:
             raise credential_exeptions
-
-        user = await user_repository.get_user_by_email(
-            email=user_email, 
-            session=db)
         
+        user = await user_repository.get_user_by_email(
+            email=user_email,
+            session=db
+        )
+
         if user is None:
             raise credential_exeptions
         
@@ -44,7 +47,7 @@ class AuthService:
     
     async def get_current_user_role(
             self,
-            token: str = Depends(auth2scheme),
+            request:Request,
             session: AsyncSession = Depends(get_conn_db) 
     ):
         credential_exeptions = HTTPException(
@@ -53,6 +56,11 @@ class AuthService:
             headers={"WWW-Authenticate": "Bearer"},
         )
         try:
+            token = request.cookies.get('access_token')
+
+            if token is None:
+                raise credential_exeptions
+            
             pyload = await token_manager.decode_token(
                 token_type=TokenType.ACCESS,
                 token=token
@@ -68,16 +76,13 @@ class AuthService:
         
         except JWTError:
             raise credential_exeptions
-    
+
+
 def role_required(*allowed_roles: str):
     async def verify_role(role: str = Depends(AuthService().get_current_user_role)):
-        # Приводим роль к нижнему регистру для нечувствительного сравнения
         if role.lower() not in [r.lower() for r in allowed_roles]:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="access banned"
             )
     return Depends(verify_role)
-
-
-

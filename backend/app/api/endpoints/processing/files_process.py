@@ -99,7 +99,7 @@ async def download_file(
     if file_data is None:
         raise HTTPException(status_code=404, detail="File data not found")
 
-    file_stream = io.BytesIO(file_data)
+    file_stream = io.BytesIO(file_data) #type:ignore
 
     return StreamingResponse(
         file_stream,

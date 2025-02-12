@@ -8,7 +8,7 @@ from backend.services.mail_serv.email_manager import email_manager
 from backend.app.core.security.security_password import Hasher
 from backend.app.db.crud import user_repository
 from backend.app.api.dependecies.client_db import get_conn_db
-from backend.app.core.security.jwt import token_manager, TokenType
+from backend.app.core.security.secure_token import token_manager, TokenType
 from backend.app.db import schemas as shs
 from backend.app.core.config import settings
 
