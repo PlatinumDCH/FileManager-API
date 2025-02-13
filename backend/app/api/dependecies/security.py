@@ -1,4 +1,4 @@
-from jose import JWTError
+from jose import ExpiredSignatureError, JWTError
 from fastapi import Depends, Request, status, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,30 +20,32 @@ class AuthService:
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
+        
         token = request.cookies.get('access_token')
 
-        if token is None:
-            raise credential_exeptions
-
-        try:
-            pyload = await token_manager.decode_token(
-                token_type=TokenType.ACCESS,
-                token=token
-            )
-            if (user_email := pyload.get('sub')) is None:
+        if token:
+    
+            try:
+                pyload = await token_manager.decode_token(
+                    token_type=TokenType.ACCESS,
+                    token=token
+                )
+                if (user_email := pyload.get('sub')) is None:
+                    raise credential_exeptions
+                user = await user_repository.get_user_by_email(
+                    email=user_email,
+                    session=db
+                )
+                if user is None:
+                    raise credential_exeptions
+                
+                return user
+            except ExpiredSignatureError:
+                pass
+            except JWTError:
                 raise credential_exeptions
-        except JWTError:
-            raise credential_exeptions
-        
-        user = await user_repository.get_user_by_email(
-            email=user_email,
-            session=db
-        )
-
-        if user is None:
-            raise credential_exeptions
-        
-        return user
+            
+    
     
     async def get_current_user_role(
             self,
