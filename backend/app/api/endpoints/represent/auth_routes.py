@@ -1,8 +1,9 @@
-from fastapi import APIRouter
-from fastapi.responses import HTMLResponse
+from fastapi import APIRouter, Depends, status
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi import Request
 
+from backend.app.api.dependecies.security import AuthService
 
 router = APIRouter(prefix='/auth')
 
@@ -30,3 +31,4 @@ async def register_form(request:Request):
             'error_message':None
         }
     )
+

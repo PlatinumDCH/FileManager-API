@@ -1,5 +1,53 @@
 {% extends "base.html" %}
-{% block title %}Главная{% endblock %}
+{% block title %}FileManager{% endblock %}
+
 {% block content %}
-    <h1>Добро пожаловать в FileManager</h1>
+<div class="container">
+    <!-- Banner 1 -->
+    <div class="banner banner-primary">
+        <h2>🚀 Your Files, Your Control!</h2>
+        <p>Manage, organize, and access your files with ease. The ultimate file management solution is here!</p>
+    </div>
+
+    <!-- Main Heading -->
+    <div class="magic-container">
+        <h1 class="main-heading">Welcome to FileManager</h1>
+        <p class="subheading">Hello From FileManager! Your trusted companion for file organization and storage.</p>
+    </div>
+    <!-- Banner 2 -->
+    <div class="banner banner-secondary">
+        <h2>💾 Store. Share. Simplify.</h2>
+        <p>Upload, download, and manage your files effortlessly. Built for speed and simplicity.</p>
+    </div>
+
+    <!-- Features Section -->
+    <div class="features">
+        <h3>Why Choose FileManager?</h3>
+        <div class="feature-list">
+            <div class="feature">
+                <span class="icon">📂</span>
+                <h4>Easy File Management</h4>
+                <p>Organize your files into folders, rename, delete, or move them with just a few clicks.</p>
+            </div>
+            <div class="feature">
+                <span class="icon">🔒</span>
+                <h4>Secure Storage</h4>
+                <p>Your files are safe with us. We use advanced encryption to protect your data.</p>
+            </div>
+            <div class="feature">
+                <span class="icon">🌐</span>
+                <h4>Access Anywhere</h4>
+                <p>Access your files from any device, anywhere in the world. All you need is an internet connection.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Call to Action -->
+    <div class="cta">
+        <h3>Ready to Get Started?</h3>
+        <p>Join thousands of users who trust FileManager for their file management needs.</p>
+        <a href="/auth/login" class="btn btn-primary">Sign Up Now</a>
+        <a href="#" class="btn btn-secondary">Learn More</a>
+    </div>
+</div>
 {% endblock %}

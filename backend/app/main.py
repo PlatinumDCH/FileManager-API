@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 
 from backend.services.minio_serv.manager import minio_handler
 from backend.app.api.routers import api_router
+from backend.app.api.dependecies.security import AuthService
 from backend.app.utils.logger import logger
 
 
@@ -29,8 +30,12 @@ app.mount(
 )
 
 app.include_router(router=api_router)
+
 @app.get('/')
-async def index(request: Request):
+async def index(
+    request: Request, 
+    user=Depends(AuthService().get_current_user)):
     return templates.TemplateResponse("index.html",{
-        "request":request
+        "request":request,
+        'user':user
     })

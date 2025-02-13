@@ -29,3 +29,15 @@ async def dashboard(
             "user":auth_user
         }
     )
+@router.get('/contacts')
+async def contacts(
+    request:Request,
+    current_user=Depends(AuthService().get_current_user)):
+    return templates.TemplateResponse(
+        "contacts.html", 
+        {
+            'request':request,
+            'user':current_user
+        }
+       
+    )

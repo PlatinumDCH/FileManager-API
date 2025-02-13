@@ -4,7 +4,7 @@ from datetime import timedelta
 class AccessTokenStrategy(ITokenStrategy):
 
     def _get_default_expiry(self) -> timedelta:
-        return timedelta(minutes=60)
+        return timedelta(minutes=30)
     
     async def create_token(
             self, 
