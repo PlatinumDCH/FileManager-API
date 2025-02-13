@@ -15,10 +15,10 @@ templates = Jinja2Templates(directory=BASE_DIR /"frontend/templates")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # try:
-    #     await minio_handler.create_bucket()
-    # except Exception as e:
-    #     logger.error(f'Error cheking bucket exists')
+    try:
+        await minio_handler.create_bucket()
+    except Exception as e:
+        logger.error(f'Error cheking bucket exists')
     yield
 
 app = FastAPI(lifespan=lifespan)

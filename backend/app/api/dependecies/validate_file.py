@@ -4,6 +4,7 @@ import aiofiles
 import json
 from abc import ABC, abstractmethod
 from pathlib import Path
+from backend.app.utils.logger import logger
 
 class IFileExtensionChecker(ABC):
 
@@ -37,7 +38,7 @@ class UnsupportedFileType(FileType):
         return 'unsupported'
     
 class FileExtensionLoader(IFileExtensionLoder):
-    def __init__(self, file_path:Path):
+    def __init__(self, file_path:str):
         self.file_path = file_path
     
     async def load_allowed_extensions(self):
@@ -68,7 +69,7 @@ class FileExtensionChecker(IFileExtensionChecker):
         }
     
     def check(self, file_name:str):
-        file_extensions = file_name.split('.')[-1]
+        file_extensions = file_name.split('.')[-1].lower()
 
         for file_type, strategy in self.file_type_extensions.items():
             if file_extensions in self.allowed_extensions[file_type]:
@@ -87,6 +88,7 @@ class FileExtensionValidator:
     
     async def validate(self, file_name: str):
         allowed_extensions = await self.extension_loader.load_allowed_extensions()
+
         self.extension_checker.allowed_extensions = allowed_extensions
         file_type = self.extension_checker.check(file_name)
         

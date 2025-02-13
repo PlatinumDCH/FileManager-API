@@ -6,6 +6,27 @@
     <div class="container">
         <h2 class="text-center mb-4">Welcome to the Dashboard, {{ user.user_name }}!</h2>
         <p>You are logged in as {{ user.email }}.</p>
-        <!-- <a href="/auth/logout" class="btn btn-danger">Logout</a> -->
+    
+        {% if message %}
+            <div class="alert alert-success" role="alert">
+                {{ message }}
+            </div>
+        {% endif %}
+
+        <!-- Блок для сообщений об ошибках -->
+        {% if error_message %}
+            <div class="alert alert-danger" role="alert">
+                {{ error_message }}
+            </div>
+        {% endif %}
+
+        <!-- Form upload fles -->
+        <form action="/files/upload" method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="file">Chose file to upload:</label>
+                <input type="file" clas="form-control-file" id="file" name="file" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Upload</button>
+        </form>
     </div>
 {% endblock %}

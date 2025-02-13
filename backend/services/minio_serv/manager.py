@@ -121,7 +121,7 @@ class MinioHandler:
         try:
             async with await self.client.get_client() as s3:
                 await s3.head_bucket(Bucket=self.bucket)
-            logger.info(f"Bucker '{self.bucket}' existed.")
+            # logger.info(f"Bucker '{self.bucket}' existed.")
             return True
         except Exception as e:
             logger.warning(f"Bucket '{self.bucket}' not found: {str(e)}")

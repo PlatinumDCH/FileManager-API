@@ -3,6 +3,8 @@ from fastapi import (
     Depends,
     File,
     Query,
+    Request,
+    Response,
     UploadFile,
     HTTPException,
     status,
@@ -12,6 +14,7 @@ from fastapi import (
 )
 import io
 from fastapi.responses import StreamingResponse
+from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.services.minio_serv.manager import minio_handler
@@ -24,28 +27,47 @@ from backend.app.api.dependecies.validate_file import get_file_extension_validat
 
 router = APIRouter(prefix="/files")
 
+templates = Jinja2Templates(
+    directory="/Users/plarium/Develop/project/FileManager-API/frontend/templates"
+)
 
 @router.post("/upload", status_code=status.HTTP_201_CREATED)
 async def upload_file(
+    request:Request,
+    response:Response,
     file: UploadFile = File(...),
     session: AsyncSession = Depends(get_conn_db),
     auth_user=Depends(AuthService().get_current_user),
-    file_extesions_validator: FileExtensionValidator = Depends(
-        get_file_extension_validator
-    ),
-):
+    file_extensions_validator: FileExtensionValidator = Depends(
+        get_file_extension_validator)
+    ):
+    
     if not file or not file.filename:
-        raise HTTPException(
+        error_message = 'file without name or file received'
+        return templates.TemplateResponse(
+            "dashboard.html",
+            {
+                "request": request, 
+                "error_message": error_message,
+                "user":auth_user
+            },
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="file without name or file received",
         )
 
     try:
-        file_type = await file_extesions_validator.validate(file.filename)
-    except HTTPException as error:
-        raise HTTPException(
-            status_code=error.status_code,
-            detail=f'Unsupported file extension for file "{file.filename}"',
+        
+        file_type = await file_extensions_validator.validate(file.filename)
+
+    except HTTPException:
+        error_message = 'Unsupported file extension.'
+        return templates.TemplateResponse(
+            "dashboard.html",
+            {
+                "request": request, 
+                "error_message": error_message,
+                "user":auth_user
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
         )
 
     try:
@@ -53,16 +75,29 @@ async def upload_file(
             user_id=auth_user.id, file=file, file_type=file_type
         )
     except ValueError as e:
-        raise HTTPException(
+        error_message = 'Something happen.'
+        return templates.TemplateResponse(
+             "dashboard.html",
+            {
+                "request": request, 
+                "error_message": error_message,
+                "user":auth_user
+            },
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Error generating unique filename : {str(e)}",
         )
-
     file_size = file.size if file.size is not None else 0
 
     if file_size > settings.MAX_SIZE:
-        raise HTTPException(status_code=400, detail="File too large")
-
+        error_message = 'File to big.'
+        return templates.TemplateResponse(
+             "dashboard.html",
+            {
+                "request": request, 
+                "error_message": error_message,
+                "user":auth_user
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
     await minio_handler.upload_file(unique_name, file)
 
     await crud.files.create_file(
@@ -72,10 +107,17 @@ async def upload_file(
         file_path=unique_name,
         size=file_size,
     )
-
-    return {"status": "uploaded", "name": file.filename}
-
-
+    message = 'File siccesffull upload!'
+    return templates.TemplateResponse(
+        'dashboard.html',
+        {
+            'request':request,
+            'message':message,
+            'user':auth_user
+        },
+        status_code=status.HTTP_201_CREATED
+    )
+   
 @router.get("/download")
 async def download_file(
     file_name: str = Query(..., description="original name file"),
