@@ -11,7 +11,7 @@ from backend.app.core.security.secure_token import token_manager, TokenType
 
 from backend.app.core.security.security_password import Hasher
 from backend.app.api.dependecies.security import AuthService
-from backend.app.db.crud import user_repository
+from backend.app.repository.manager import CRUDManager
 from backend.app.db import schemas as shs
 from backend.app.utils.logger import logger
 from backend.services.mail_serv.email_manager import email_manager
@@ -29,7 +29,7 @@ async def register_user(
     session: AsyncSession = Depends(get_conn_db),
 ):
     try:
-        if await user_repository.exist_user(email, session):
+        if await CRUDManager.users.exist_user(email, session):
             error_message = "User already exists"
             return templates.TemplateResponse(
                 'register.html',
@@ -42,7 +42,7 @@ async def register_user(
             )
             
         password = Hasher.get_password_hash(password)
-        new_user = await user_repository.create_new_user(
+        new_user = await CRUDManager.users.create_new_user(
             email = email, 
             user_name = user_name,
             password = password,
@@ -87,7 +87,7 @@ async def autorization(
     save refreshToken to database
     return ResponseAutorization
     """
-    user = await user_repository.autenticate_user(
+    user = await CRUDManager.users.autenticate_user(
         email=user_email, password=password, session=session
     )
 
@@ -127,7 +127,7 @@ async def autorization(
         data={"sub": user.email}
     )
     
-    await user_repository.update_token(
+    await CRUDManager.tokens.update_token(
         user, 
         encode_refresh_token, 
         'refresh_token', 
@@ -160,7 +160,7 @@ async def logout(
     """
     clear refresh token in database
     """
-    await user_repository.update_token(auth_user, None, TokenType.REFRESH, session)
+    await CRUDManager.tokens.update_token(auth_user, None, TokenType.REFRESH, session)
     return {"message": "Logged out successfully"}
 
 
@@ -187,5 +187,34 @@ async def delete_me(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
-    await user_repository.delete_user_from_db(auth_user, session)
+    await CRUDManager.users.delete_user_from_db(auth_user, session)
     return {"message": "User deleted succesfully"}
+
+@router.post('/refresh-token')
+async def refresh_token(
+    request: Request,
+    session: AsyncSession = Depends(get_conn_db)
+):
+    refresh_token = request.cookies.get('refresh_token')
+    if not refresh_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail='Refresh token is missing'
+        )
+    try:
+        payload = await token_manager.decode_token(
+            TokenType.REFRESH,
+            token=refresh_token
+        )
+        user_email = payload.get('sub')
+        if not user_email:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail='Invalid refresh token'
+            )
+        user = await CRUDManager.users.get_user_by_email(
+            email=user_email,
+            session=session
+        )
+    except Exception:
+        pass

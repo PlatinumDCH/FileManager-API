@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.services.mail_serv.email_manager import email_manager
 from backend.app.core.security.security_password import Hasher
-from backend.app.db.crud import user_repository
+from backend.app.repository.manager import CRUDManager
 from backend.app.api.dependecies.client_db import get_conn_db
 from backend.app.core.security.secure_token import token_manager, TokenType
 from backend.app.db import schemas as shs
@@ -31,7 +31,7 @@ async def forgot_password(
     send email to emailService
     """
 
-    curent_user = await user_repository.get_user_by_email(body.email, session)
+    curent_user = await CRUDManager.users.get_user_by_email(body.email, session)
     if not curent_user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, 
@@ -71,7 +71,7 @@ async def reset_password(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="New password and confirm password are not same.",
             )
-        user = await user_repository.get_user_by_email(user_email, session)
+        user = await CRUDManager.users.get_user_by_email(user_email, session)
         if user is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -88,12 +88,12 @@ async def reset_password(
         hashed_password = Hasher.get_password_hash(
             password=body.new_password
             )
-        await user_repository.update_user_password(
+        await CRUDManager.users.update_user_password(
             user=user, 
             hashed_password=hashed_password, 
             session=session)
 
-        await user_repository.update_token(
+        await CRUDManager.tokens.update_token(
             user=user, 
             token=None,
             token_type=TokenType.RESET_PASSWORD,
@@ -124,7 +124,7 @@ async def resend_confirmation_email(
     :returns : message status send email
     :raises: emeil yield confirm
     """
-    curent_user = await user_repository.get_user_by_email(
+    curent_user = await CRUDManager.users.get_user_by_email(
         email=body.email, 
         session=session)
     if not curent_user:
@@ -163,7 +163,7 @@ async def confirm_email(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Invalid Password Reset Payload or Reset Link Expired",
             )
-    curent_user = await user_repository.get_user_by_email(user_email, session)
+    curent_user = await CRUDManager.users.get_user_by_email(user_email, session)
     if curent_user is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -172,8 +172,8 @@ async def confirm_email(
     if curent_user.confirmed:
         return {"message": "Your email already confirmed"}
 
-    await user_repository.confirmed_email(user=curent_user, session=session, value=True)
-    await user_repository.update_token(
+    await CRUDManager.users.confirmed_email(user=curent_user, session=session, value=True)
+    await CRUDManager.tokens.update_token(
         curent_user, 
         None, 
         TokenType.EMAIL, 

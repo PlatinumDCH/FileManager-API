@@ -15,7 +15,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.services.minio_serv.manager import minio_handler
-from backend.app.db.crund_file import file_manager
+from backend.app.repository.manager import CRUDManager
 from backend.app.core.config import settings
 from backend.app.api.dependecies.security import AuthService
 from backend.app.api.dependecies.client_db import get_conn_db
@@ -49,7 +49,7 @@ async def upload_file(
         )
 
     try:
-        unique_name = await file_manager.generate_uniq_filename(
+        unique_name = await CRUDManager.files.generate_uniq_filename(
         user_id=auth_user.id, file=file, file_type=file_type
         )
     except ValueError as e:
@@ -69,7 +69,7 @@ async def upload_file(
 
     await minio_handler.upload_file(unique_name, file)
 
-    await file_manager.create_file(
+    await CRUDManager.files.create_file(
         session=session,
         user_id=auth_user.id,
         file_name=file.filename,
@@ -86,7 +86,7 @@ async def download_file(
     session: AsyncSession = Depends(get_conn_db),
     auth_user = Depends(AuthService().get_current_user),
 ):
-    file_object = await file_manager.get_file_record(
+    file_object = await CRUDManager.files.get_file_record(
         user_id=auth_user.id, orig_file_name=file_name, session=session
     )
     if not file_object:
@@ -114,7 +114,7 @@ async def list_files(
     session: AsyncSession = Depends(get_conn_db),
 ):
     """get list file database by user"""
-    files = await file_manager.get_files(session=session, user_id=auth_user.id)
+    files = await CRUDManager.files.get_files(session=session, user_id=auth_user.id)
     if not files:
         return {"message": "User dont have upload files", "files": []}
     file_list = [
@@ -137,7 +137,7 @@ async def delete_file(
     session: AsyncSession = Depends(get_conn_db),
 ):
     """delete file MinIO DataBase"""
-    file_object = await file_manager.get_file_record(
+    file_object = await CRUDManager.files.get_file_record(
         user_id=auth_user.id, orig_file_name=file_name, session=session
     )
     if not file_object:
@@ -146,7 +146,7 @@ async def delete_file(
     uniq_name = file_object.file_path
 
     await minio_handler.delete_file(uniq_name)
-    await file_manager.delete_file_record(file_object, session)
+    await CRUDManager.files.delete_file_record(file_object, session)
 
     return {
         "message": "File sucessfull deleted",
@@ -183,7 +183,7 @@ async def update_file(
             detail=f'Unsupported file extension for file "{new_file.filename}"' 
         )
     
-    file_obj = await file_manager.get_file_record(
+    file_obj = await CRUDManager.files.get_file_record(
         user_id=auth_user.id,
         orig_file_name=file_name,
         session=session,
@@ -199,7 +199,7 @@ async def update_file(
     
     await minio_handler.delete_file(old_unique_name)
 
-    new_unique_name = await file_manager.generate_uniq_filename(
+    new_unique_name = await CRUDManager.files.generate_uniq_filename(
         user_id=auth_user.id, 
         file=new_file,
         file_type=file_type
@@ -207,7 +207,7 @@ async def update_file(
     
     await minio_handler.upload_file(new_unique_name, new_file)
 
-    update_file = await file_manager.update_file_record(
+    update_file = await CRUDManager.files.update_file_record(
         session,
         file_obj,
         new_unique_name,
@@ -230,7 +230,7 @@ async def check_file_exists(
     file_name:str = Query(..., description='Original file name'),
     session = Depends(get_conn_db)
 ):
-    file_obj = await file_manager.get_file_record(
+    file_obj = await CRUDManager.files.get_file_record(
         user_id=auth_user.id,
         orig_file_name=file_name,
         session=session

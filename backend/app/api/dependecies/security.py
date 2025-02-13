@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.utils.logger import logger
 from backend.app.api.dependecies.client_db import get_conn_db
 from backend.app.core.security.secure_token import token_manager, TokenType
-from backend.app.db.crud import user_repository
+from backend.app.repository.manager import CRUDManager
 
 
 
@@ -32,7 +32,7 @@ class AuthService:
                 )
                 if (user_email := pyload.get('sub')) is None:
                     raise credential_exeptions
-                user = await user_repository.get_user_by_email(
+                user = await CRUDManager.users.get_user_by_email(
                     email=user_email,
                     session=db
                 )
@@ -69,7 +69,7 @@ class AuthService:
                 )
             if (user_email := pyload.get('sub')) is None:
                 raise credential_exeptions
-            user = await user_repository.get_user_by_email(
+            user = await CRUDManager.users.get_user_by_email(
                 email=user_email, 
                 session=session
                 )

@@ -4,7 +4,7 @@ from backend.services.mail_serv.tasks import send_verification_email, send_passw
 from backend.app.utils.logger import logger
 from backend.app.core.config import settings
 from backend.app.db.models.user_model import User
-from backend.app.db.crud import user_repository
+from backend.app.repository.manager import CRUDManager
 from backend.app.core.security.secure_token import token_manager, TokenType
 
 
@@ -15,7 +15,7 @@ class EmailService:
             token_type=TokenType.EMAIL,
             data={"sub": user.email}
         )
-        await user_repository.update_token(
+        await CRUDManager.tokens.update_token(
             user=user, 
             token=email_token, 
             token_type=TokenType.EMAIL,
@@ -33,7 +33,7 @@ class EmailService:
             token_type=TokenType.RESET_PASSWORD,
             data={"sub": user.email}
         )
-        await user_repository.update_token(
+        await CRUDManager.tokens.update_token(
             user=user, 
             token=re_pass_token, 
             token_type=TokenType.RESET_PASSWORD,

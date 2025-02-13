@@ -89,5 +89,3 @@ class FileOperation:
             await session.rollback()
             return None
 
-
-file_manager = FileOperation()
