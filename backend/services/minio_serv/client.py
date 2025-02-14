@@ -1,6 +1,7 @@
 import aioboto3  # type: ignore
-from backend.app.core.config import settings
 from abc import ABC, abstractmethod
+
+from backend.app.core.config import settings
 
 class IClient(ABC):
     @abstractmethod

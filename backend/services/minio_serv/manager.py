@@ -1,4 +1,3 @@
-import magic
 from fastapi import HTTPException, UploadFile
 from typing import Optional, BinaryIO
 
@@ -33,15 +32,12 @@ class MinioHandler:
         :raices HTTPException: If the upload fails.
         """
         try:
-            # mime = magic.Magic(mime=True)
-            # file_type = mime.from_buffer(await file.read())
-
+    
             async with await self.client.get_client() as s3:
                 await s3.upload_fileobj(
                     file.file, 
                     self.bucket, 
                     file_path,
-                    # ExtraArgs={'ContentType':file_type}
                 )
             logger.info(f'File uploaded successfully to {file_path}')
         except Exception as e:
@@ -121,7 +117,6 @@ class MinioHandler:
         try:
             async with await self.client.get_client() as s3:
                 await s3.head_bucket(Bucket=self.bucket)
-            # logger.info(f"Bucker '{self.bucket}' existed.")
             return True
         except Exception as e:
             logger.warning(f"Bucket '{self.bucket}' not found: {str(e)}")

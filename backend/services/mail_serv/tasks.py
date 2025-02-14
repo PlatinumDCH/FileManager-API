@@ -1,11 +1,3 @@
-from pydantic import SecretStr
-from pathlib import Path
-from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
-
-
-
-import asyncio
-
 from backend.services.mail_serv.email_sender import render_template, send_email
 from backend.services.mail_serv.config.celery_app import app
 

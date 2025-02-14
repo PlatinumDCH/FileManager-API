@@ -12,8 +12,10 @@ from fastapi import (
     File,
     status,
 )
+from datetime import datetime
+from urllib.parse import quote
 import io
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -28,7 +30,7 @@ from backend.app.api.dependecies.validate_file import get_file_extension_validat
 router = APIRouter(prefix="/files")
 
 templates = Jinja2Templates(
-    directory="/Users/plarium/Develop/project/FileManager-API/frontend/templates"
+    directory="/FileManager-API/frontend/templates"
 )
 
 @router.post("/upload", status_code=status.HTTP_201_CREATED)
@@ -43,15 +45,9 @@ async def upload_file(
     ):
     
     if not file or not file.filename:
-        error_message = 'file without name or file received'
-        return templates.TemplateResponse(
-            "dashboard.html",
-            {
-                "request": request, 
-                "error_message": error_message,
-                "user":auth_user
-            },
+        return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
+            content={'detail':'Faile without name or file received'}
         )
 
     try:
@@ -59,7 +55,7 @@ async def upload_file(
         file_type = await file_extensions_validator.validate(file.filename)
 
     except HTTPException:
-        error_message = 'Unsupported file extension.'
+        error_message = 'Unsupported file extension'
         return templates.TemplateResponse(
             "dashboard.html",
             {
@@ -107,15 +103,16 @@ async def upload_file(
         file_path=unique_name,
         size=file_size,
     )
-    message = 'File siccesffull upload!'
-    return templates.TemplateResponse(
-        'dashboard.html',
-        {
-            'request':request,
-            'message':message,
-            'user':auth_user
-        },
-        status_code=status.HTTP_201_CREATED
+    return JSONResponse(
+        status_code=status.HTTP_201_CREATED,
+        content={
+            'file':{
+                'file_name':file.filename,
+                'size':file_size,
+                'uploaded_at': datetime.now().isoformat(),
+                'file_path':unique_name
+            }
+        }
     )
    
 @router.get("/download")
@@ -125,7 +122,9 @@ async def download_file(
     auth_user=Depends(AuthService().get_current_user),
 ):
     file_object = await crud.files.get_file_record(
-        user_id=auth_user.id, orig_file_name=file_name, session=session
+        user_id=auth_user.id, 
+        orig_file_name=file_name, 
+        session=session
     )
     if not file_object:
         raise HTTPException(status_code=404, detail="File not found")
@@ -133,16 +132,18 @@ async def download_file(
     uniq_name = file_object.file_path
 
     file_data = await minio_handler.get_file(uniq_name)
-
+    encoded_file_name = quote(file_name)
     if file_data is None:
         raise HTTPException(status_code=404, detail="File data not found")
 
     file_stream = io.BytesIO(file_data)  # type:ignore
 
+    headers = {
+        "Content-Disposition": f'attachment; filename*=UTF-8\'\'{encoded_file_name}'
+    }
     return StreamingResponse(
         file_stream,
-        media_type="application/octet-stream",
-        headers={"Content-Disposition": f"attachment; filename={file_name}"},
+        headers=headers,
     )
 
 

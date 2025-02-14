@@ -4,9 +4,8 @@ from jinja2 import Environment, FileSystemLoader
 import smtplib
 
 from backend.app.core.config import settings
-from pathlib import Path
 
-templates_dir = Path(__file__).parent / 'templates' / 'email_templates'
+templates_dir = '/frontend/templates'
 env = Environment(loader=FileSystemLoader(templates_dir))
 
 def render_template(template_name, **context):

@@ -2,7 +2,7 @@ import pytest
 from fastapi import HTTPException, status
 from backend.app.core.security.security_password import Hasher
 
-# Тесты для метода verify_password
+
 def test_verify_password_correct():
     plain_password = "mysecretpassword"
     hashed_password = Hasher.get_password_hash(plain_password)
@@ -22,7 +22,7 @@ def test_verify_password_invalid_hash():
     assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     assert exc_info.value.detail == "Password verification failed"
 
-# Тесты для метода get_password_hash
+
 def test_get_password_hash_success():
     password = "mysecretpassword"
     hashed_password = Hasher.get_password_hash(password)

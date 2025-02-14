@@ -12,5 +12,4 @@ class UserTokens(base.BaseModel):
     email_token: Mapped[str] = mapped_column(String(255), nullable=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
 
-    # connect with User
     user: Mapped["user.User"] = relationship("User", back_populates="tokens",lazy="joined")

@@ -3,8 +3,6 @@ from backend.app.core.config import settings
 import aiofiles
 import json
 from abc import ABC, abstractmethod
-from pathlib import Path
-from backend.app.utils.logger import logger
 
 class IFileExtensionChecker(ABC):
 

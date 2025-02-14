@@ -5,20 +5,17 @@ from fastapi.templating import Jinja2Templates
 from jose import ExpiredSignatureError, JWTError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.api.dependecies.client_db import get_conn_db
-
 from backend.app.core.security.secure_token import token_manager, TokenType
-
+from backend.app.api.dependecies.client_db import get_conn_db
 from backend.app.core.security.security_password import Hasher
 from backend.app.api.dependecies.security import AuthService
 from backend.app.repository.manager import crud
 from backend.app.db import schemas as shs
 from backend.app.utils.logger import logger
-from backend.services.mail_serv.email_manager import email_manager
 
 router = APIRouter(prefix="/auth")
 templates = Jinja2Templates(
-    directory="/Users/plarium/Develop/project/FileManager-API/frontend/templates"
+    directory="/FileManager-API/frontend/templates"
 )
 
 

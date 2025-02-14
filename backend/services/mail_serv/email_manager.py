@@ -4,8 +4,6 @@ from backend.services.mail_serv.tasks import (
     send_verification_email,
     send_password_reset_email,
 )
-from backend.app.utils.logger import logger
-from backend.app.core.config import settings
 from backend.app.db.models.user_model import User
 from backend.app.repository.manager import crud
 from backend.app.core.security.secure_token import token_manager, TokenType
